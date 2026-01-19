@@ -122,9 +122,7 @@ The subclass set it's own self.user_message and then called super(), which made 
 **Lesson:** 
 Always set or override subclass attributes after the super().__init__() call.
 
+**Debug time:** 4 effin hours.
 
-
-**Debug time:** 4 friggin hours.
-
-I checked the decorator flow, error class, mapper and Middleware like a gazillion times. Literally everything except the inheritance chain
+checked the decorator flow, error class, mapper and Middleware like a gazillion times. Literally everything except the inheritance chain
 
