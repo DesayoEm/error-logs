@@ -1,7 +1,114 @@
 # Python Errors
 
+
+---
 ###
-## Error Category: Error Category: OOP Inheritance / Attribute Override via super()
+## Error Category: Module imports / package management 
+
+
+**Date:** 23 Jan 2026  
+**Context:** Deleted `__init__.py` files from package structure to test whether they were still needed in Python 3.3+. After restoring them, imports failed until editable install was reinstalled.  
+**Version:** Python 3.11, pip (editable install via pyproject.toml)
+
+## Error
+```python
+from .tests.unit.transformation.fixtures import (
+    study_key,
+    full_study_data,
+    # ...
+)
+
+ModuleNotFoundError: No module named 'Clinexa.tests.unit.tests'
+```
+
+## Code (Before)
+```
+Clinexa/
+├── pyproject.toml
+├── tests/
+│   └── unit/
+│       └── transformation/
+│           └── fixtures.py    # No __init__.py files anywhere
+└── src/
+```
+
+Previously installed with:
+```bash
+pip install -e .
+```
+
+## Solution
+```
+Clinexa/
+├── pyproject.toml
+├── __init__.py              # <-- Added back
+├── tests/
+│   ├── __init__.py          # <-- Added back
+│   └── unit/
+│       ├── __init__.py      # <-- Added back
+│       └── transformation/
+│           ├── __init__.py  # <-- Added back
+│           └── fixtures.py
+└── src/
+```
+
+Then **reinstalled** the editable:
+```bash
+pip install -e .
+```
+
+Simply restoring the `__init__.py` files was not sufficient the editable install had to be reinstalled.
+
+## Explanation
+
+**What caused the error:**
+
+1. While Python 3.3+ technically allows packages without `__init__.py` (namespace packages via PEP 420), this feature is designed for specific use cases like splitting packages across multiple directories, not for general package development.
+
+2. Editable installs (`pip install -e .`) cache package metadata that describes the structure. When the `__init__.py` files were deleted, pip's cached metadata reflected a broken/malformed package structure.
+
+3. Restoring the files didn't update the cached metadata - Python was still using the old view of the package structure from when it was installed without `__init__.py`.
+
+**Why the solution works:**
+
+Reinstalling the editable install (`pip install -e .`) forces pip to rebuild the package metada and Re-scan the directory structure
+
+The metadata files created by pip (`.egg-link` or entries in `site-packages/`) are what Python's import system uses to locate your modules. Just changing source files doesn't update this metadata.
+
+**Key takeaways:**
+
+- **`__init__.py` is still required in practice** for:
+  - Editable installs
+  - Relative imports
+  - Most real-world package structures
+  
+- **Namespace packages (without `__init__.py`) are for specific use cases**, not a general replacement for regular packages
+
+- **Package structure changes require reinstalling editable installs** - modifying package boundaries (adding/removing `__init__.py`, renaming directories) requires reinstalling to refresh cached metadata
+
+- **Alternative reinstall commands:**
+```bash
+  # Force rebuild without full reinstall
+  pip install -e . --force-reinstall --no-deps
+  
+  # Or uninstall then reinstall
+  pip uninstall package_name
+  pip install -e .
+```
+
+
+
+- Other tools (pytest, mypy, IDEs) also expect `__init__.py` for package structure discovery
+- Relative imports (`.module`, `..parent`) are particularly dependent on proper `__init__.py` placement
+- The cached metadata issue applies to any structural package changes, not just `__init__.py`
+
+---
+
+
+
+###
+## Error Category: OOP Inheritance / Attribute Override via super()
+
 
 **Date:** 21 Apr 2025
 **Context:** Subclass (RelatedEntityNotFoundError) was supposed to override a parent attribute (user_message) from RelationshipError.
